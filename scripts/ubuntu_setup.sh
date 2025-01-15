@@ -65,14 +65,28 @@ sudo ufw enable && sudo ufw allow 22
 success "successfully exposed port 22"
 
 # Tailwcale
-info "Setting up tailscale"
-notice "provide tailscale auth key: " 
-read TS_AUTH_KEY
+notice "Do you wanna setup tailscale [Y/N]: "
+read TAILSCALE_SETUP
 
-curl -fsSL https://tailscale.com/install.sh | sh && sudo tailscale up --auth-key=$TS_AUTH_KEY
-TS_IP=$(tailscale ip | grep -E "^[0-9]+\.")
-success "successfully setup tailscale${RESET}${GREY} - ${TS_IP}"
+TAILSCALE_SETUP=$(echo "$TAILSCALE_SETUP" | tr '[:upper:]' '[:lower:]')
 
+if [ -z "$TAILSCALE_SETUP" ]; then
+    TAILSCALE_SETUP="n"
+fi
+
+if ["$TAILSCALE_SETUP" == "y"]; then
+    info "Setting up tailscale"
+    notice "provide tailscale auth key: " 
+    read TS_AUTH_KEY
+
+    curl -fsSL https://tailscale.com/install.sh | sh && sudo tailscale up --auth-key=$TS_AUTH_KEY
+    TS_IP=$(tailscale ip | grep -E "^[0-9]+\.")
+    success "successfully setup tailscale${RESET}${GREY} - ${TS_IP}"
+elif ["$TAILSCALE_SETUP" == "n"]; then
+    notice "not installing tailscale"
+else
+    notice "assuming default: no (tailscale)"
+fi
 # Setup docker
 warn "do you wanna setup docker? [Y/n]"
 read DOCKER_SETUP
@@ -118,7 +132,7 @@ if [ "$DOCKER_SETUP" == "y" ]; then
 elif [ "$user_input" == "n" ]; then
     notice "not installing docker"
 else
-    notice "assuming default: no"
+    notice "assuming default: no (docker)"
 fi
 
 # Setting up beszel monitoring
